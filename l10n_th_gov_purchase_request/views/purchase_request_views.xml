@@ -7,6 +7,7 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_tree" />
         <field name="arch" type="xml">
             <field name="origin" position="after">
+                <field name="assigned_to"/>
                 <field name="purchase_type_id" optional="hide" />
                 <field name="procurement_method_id" optional="hide" />
             </field>
