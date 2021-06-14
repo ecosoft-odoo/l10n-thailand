@@ -107,11 +107,11 @@
             </field>
             <xpath expr="//form/sheet/notebook" position="inside">
                 <page string="Committee">
-                    <group string="Procurement Committee">
+                    <group string="Work Acceptance Committee">
                         <field
-                            name="procurement_committee_ids"
+                            name="work_acceptance_committee_ids"
                             nolabel="1"
-                            context="{'default_committee_type': 'procurement'}"
+                            context="{'default_committee_type': 'work_acceptance'}"
                             attrs="{'readonly': [('state', 'not in', ('draft', 'to_approve'))]}"
                         >
                             <tree editable="bottom">
@@ -129,11 +129,11 @@
                             </tree>
                         </field>
                     </group>
-                    <group string="Work Acceptance Committee">
+                    <group string="Procurement Committee">
                         <field
-                            name="work_acceptance_committee_ids"
+                            name="procurement_committee_ids"
                             nolabel="1"
-                            context="{'default_committee_type': 'work_acceptance'}"
+                            context="{'default_committee_type': 'procurement'}"
                             attrs="{'readonly': [('state', 'not in', ('draft', 'to_approve'))]}"
                         >
                             <tree editable="bottom">
