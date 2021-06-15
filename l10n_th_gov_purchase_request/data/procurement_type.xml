@@ -8,6 +8,7 @@
         <field name="purchase_ok" eval="True" />
         <field name="supplier_taxes_id" eval="False" />
         <field name="taxes_id" eval="False" />
+        <field name="purchase_method">purchase</field>
     </record>
     <record id="product_type_002" model="product.product">
         <field name="name">จ้างที่ปรึกษา</field>
@@ -16,6 +17,7 @@
         <field name="purchase_ok" eval="True" />
         <field name="supplier_taxes_id" eval="False" />
         <field name="taxes_id" eval="False" />
+        <field name="purchase_method">purchase</field>
     </record>
     <record id="product_type_003" model="product.product">
         <field name="name">จ้างออกแบบและควบคุม</field>
@@ -24,6 +26,7 @@
         <field name="purchase_ok" eval="True" />
         <field name="supplier_taxes_id" eval="False" />
         <field name="taxes_id" eval="False" />
+        <field name="purchase_method">purchase</field>
     </record>
     <record id="product_type_004" model="product.product">
         <field name="name">งานก่อสร้าง</field>
@@ -32,6 +35,7 @@
         <field name="purchase_ok" eval="True" />
         <field name="supplier_taxes_id" eval="False" />
         <field name="taxes_id" eval="False" />
+        <field name="purchase_method">purchase</field>
     </record>
     <!-- Procurement type -->
     <record id="procurement_type_001" model="procurement.type">
