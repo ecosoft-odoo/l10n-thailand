@@ -8,7 +8,6 @@
                 <field name="active" invisible="True" />
                 <field name="name" />
                 <field name="to_create" />
-                <field name="is_check_cost" />
                 <field name="is_default" />
                 <field name="procurement_method_ids" widget="many2many_tags" />
                 <field name="description" />
@@ -39,11 +38,6 @@
                     <group>
                         <group>
                             <field name="to_create" />
-                            <field name="is_check_cost" />
-                            <field
-                                name="max_cost"
-                                attrs="{'invisible': [('is_check_cost', '=', False)], 'required': [('is_check_cost', '=', True)]}"
-                            />
                         </group>
                         <group>
                             <field name="is_default" />

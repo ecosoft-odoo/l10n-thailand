@@ -35,17 +35,6 @@ class PurchaseType(models.Model):
         required=True,
         help="Create purchase agreement or expense when pr is approved",
     )
-    is_check_cost = fields.Boolean(
-        string="Check Cost",
-        default=False,
-        help="Check estimated cost on the purchase request",
-    )
-    max_cost = fields.Float(
-        string="Max Cost",
-        default=0.0,
-        help="Visible when is_check_cost is True, "
-        "This field will check with estimated cost must not over max cost",
-    )
     is_default = fields.Boolean(
         string="Default",
         default=False,
