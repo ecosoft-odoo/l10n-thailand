@@ -56,6 +56,6 @@ class ProcurementCommittee(models.Model):
         (
             "employee_request_uniq",
             "unique (employee_id,request_id)",
-            "The employee must be unique per purchase request !",
+            "Committee has to be unique",
         ),
     ]
