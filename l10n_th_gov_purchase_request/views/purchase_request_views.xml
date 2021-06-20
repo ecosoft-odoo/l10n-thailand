@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_tree" />
         <field name="arch" type="xml">
             <field name="origin" position="after">
-                <field name="assigned_to"/>
+                <field name="assigned_to" />
                 <field name="purchase_type_id" optional="hide" />
                 <field name="procurement_method_id" optional="hide" />
             </field>
@@ -107,8 +107,8 @@
                 <field name="approved_by" readonly="1" />
             </field>
             <xpath expr="//form/sheet/notebook" position="inside">
-                <page string="Committee">
-                    <group string="Work Acceptance Committee">
+                <page name="committee" string="Committee">
+                    <group name="wa_committee" string="Work Acceptance Committee">
                         <field
                             name="work_acceptance_committee_ids"
                             nolabel="1"
@@ -130,7 +130,7 @@
                             </tree>
                         </field>
                     </group>
-                    <group string="Procurement Committee">
+                    <group name="procure_committee" string="Procurement Committee">
                         <field
                             name="procurement_committee_ids"
                             nolabel="1"
