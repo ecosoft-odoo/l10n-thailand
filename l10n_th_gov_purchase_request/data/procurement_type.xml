@@ -20,16 +20,7 @@
         <field name="purchase_method">purchase</field>
     </record>
     <record id="product_type_003" model="product.product">
-        <field name="name">จ้างออกแบบและควบคุม</field>
-        <field name="type">service</field>
-        <field name="sale_ok" eval="False" />
-        <field name="purchase_ok" eval="True" />
-        <field name="supplier_taxes_id" eval="False" />
-        <field name="taxes_id" eval="False" />
-        <field name="purchase_method">purchase</field>
-    </record>
-    <record id="product_type_004" model="product.product">
-        <field name="name">งานก่อสร้าง</field>
+        <field name="name">จ้างออกแบบและควบคุมงานก่อสร้าง</field>
         <field name="type">service</field>
         <field name="sale_ok" eval="False" />
         <field name="purchase_ok" eval="True" />
@@ -47,12 +38,8 @@
         <field name="product_id" ref="product_type_002" />
     </record>
     <record id="procurement_type_003" model="procurement.type">
-        <field name="name">จ้างออกแบบและควบคุม</field>
+        <field name="name">จ้างออกแบบและควบคุมงานก่อสร้าง</field>
         <field name="product_id" ref="product_type_003" />
-    </record>
-    <record id="procurement_type_004" model="procurement.type">
-        <field name="name">งานก่อสร้าง</field>
-        <field name="product_id" ref="product_type_004" />
     </record>
 
 </odoo>

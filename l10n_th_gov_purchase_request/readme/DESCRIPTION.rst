@@ -4,9 +4,8 @@ This module add following features to Purchase Rquest document, aimed to follow 
     1.1 Procurement Type (ประเภท)
          - ซื้อ/จ้าง/เช่า
          - จ้างที่ปรึกษา
-         - จ้างออกแบบและควบคุม
-         - งานก่อสร้าง
-    1.2 Purhcase Type (ระเบียบ)
+         - จ้างออกแบบและควบคุมงานก่อสร้าง
+    1.2 Purchase Type (ระเบียบ)
          - จัดซื้อจัดจ้างผ่านพัสดุ
          - วงเงินเล็กน้อย
          - 79(2)
@@ -29,15 +28,14 @@ This module add following features to Purchase Rquest document, aimed to follow 
     * Requested By (requested_by)
     * Purchase Representative (assigned_to)
     * Verified By (verified_by)
-    *  Approved By (approved_by)
+    * Approved By (approved_by)
 
 4. Add new Committee tab for both Procurement (ตณะกรรมการจัดซื้อจัดจ้าง) and Work Acceptance (คณะกรรมการการตรวจรับ)
 
 5. Check exception logics when sent to approve
     The exception logic are based on Thai Government procurement regulation year 2560, in summary,
-         * งานก่อสร้าง ต้องมีกรรมการจัดซื้อจัดจ้างอย่างน้อย 3 คน และกรรมการตรวจรับอย่างน้อย 3 คน
          * จ้างที่ปรึกษา ต้องมีกรรมการจัดซื้อจัดจ้างอย่างน้อย 5 คน และกรรมการตรวจรับอย่างน้อย 5 คน
-         * จ้างออกแบบและควบคุม ต้องมีกรรมการจัดซื้อจัดจ้างอย่างน้อย 3 คน และกรรมการตรวจรับอย่างน้อย 3 คน
+         * จ้างออกแบบและควบคุมงานก่อสร้าง ต้องมีกรรมการจัดซื้อจัดจ้างอย่างน้อย 3 คน และกรรมการตรวจรับอย่างน้อย 3 คน
          * ระเบียบ วงเงินเล็กน้อย ไม่เกิน 100,000 บาท และต้องมีกรรมการตรวจรับอย่างน้อย 1 คน
          * ระเบียบ 79(2) ไม่เกิน 500,000 บาท
          * ระเบียบ ว.119 ไม่เกิน 10,000 บาท และต้องมีกรรมการตรวจรับอย่างน้อย 1 คน
