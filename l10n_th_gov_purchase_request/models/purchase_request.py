@@ -53,6 +53,7 @@ class PurchaseRequest(models.Model):
     )
     assigned_to = fields.Many2one(
         string="Purchase Representative",
+        copy=False,
     )
     verified_by = fields.Many2one(
         comodel_name="res.users",
