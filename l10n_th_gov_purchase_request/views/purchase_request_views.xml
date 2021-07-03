@@ -113,7 +113,7 @@
                             name="work_acceptance_committee_ids"
                             nolabel="1"
                             context="{'default_committee_type': 'work_acceptance'}"
-                            attrs="{'readonly': [('state', 'not in', ('draft', 'to_approve'))]}"
+                            attrs="{'readonly': [('is_editable', '=', False)]}"
                         >
                             <tree editable="bottom">
                                 <field name="committee_type" invisible="1" />
@@ -135,7 +135,7 @@
                             name="procurement_committee_ids"
                             nolabel="1"
                             context="{'default_committee_type': 'procurement'}"
-                            attrs="{'readonly': [('state', 'not in', ('draft', 'to_approve'))]}"
+                            attrs="{'readonly': [('is_editable', '=', False)]}"
                         >
                             <tree editable="bottom">
                                 <field name="committee_type" invisible="1" />
