@@ -13,4 +13,7 @@
     <record id="thai_government_bond" model="purchase.guarantee.type">
         <field name="name">Thai Government Bond</field>
     </record>
+    <record id="electronic_guarantee" model="purchase.guarantee.type">
+        <field name="name">Electronic Guarantee</field>
+    </record>
 </odoo>
