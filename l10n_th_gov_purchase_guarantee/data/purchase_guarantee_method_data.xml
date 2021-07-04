@@ -6,5 +6,11 @@
     <record id="performance_bond" model="purchase.guarantee.method">
         <field name="name">เงินประกันสัญญา</field>
         <field name="default_for_model">purchase.order</field>
+        <field name="doc_type">rfq</field>
+    </record>
+    <record id="advance_payment_guarantee" model="purchase.guarantee.method">
+        <field name="name">หลักประกันการจ่ายเงินล่วงหน้า</field>
+        <field name="default_for_model">purchase.order</field>
+        <field name="doc_type">po</field>
     </record>
 </odoo>

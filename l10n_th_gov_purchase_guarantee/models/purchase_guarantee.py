@@ -132,7 +132,7 @@ class PurchaseGuarantee(models.Model):
             if self.reference._name == "purchase.requisition":
                 states.extend(["in_progress", "open"])
             elif self.reference._name == "purchase.order":
-                states.extend(["draft", "sent"])
+                states.extend(["draft", "sent", "purchase"])
             if states and self.reference.state not in states:
                 raise UserError(
                     _("%s must be in status: %s")
@@ -155,9 +155,13 @@ class PurchaseGuarantee(models.Model):
     def _compute_guarantee_method_id(self):
         GuaranteeMethod = self.env["purchase.guarantee.method"]
         for rec in self.filtered("reference"):
-            rec.guarantee_method_id = GuaranteeMethod.search(
-                [("default_for_model", "=", self.reference._name)]
-            )[:1]
+            dom = [("default_for_model", "=", rec.reference._name)]
+            if rec.reference._name == "purchase.order":
+                if rec.reference.state in ["draft", "sent"]:
+                    dom += [("doc_type", "=", "rfq")]
+                elif rec.reference.state in ["purchase"]:
+                    dom += [("doc_type", "=", "po")]
+            rec.guarantee_method_id = GuaranteeMethod.search(dom)[:1]
 
     @api.depends("requisition_id")
     def _compute_partner_id(self):

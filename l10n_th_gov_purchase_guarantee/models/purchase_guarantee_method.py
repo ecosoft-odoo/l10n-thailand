@@ -19,6 +19,13 @@ class PurchaseGuaranteeMethod(models.Model):
         string="Default method for",
         help="Guarantee created from which document model, will use this method",
     )
+    doc_type = fields.Selection(
+        selection=[
+            ("rfq", "RFQ"),
+            ("po", "PO"),
+        ],
+        string="Doc Type",
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
         string="Account",
