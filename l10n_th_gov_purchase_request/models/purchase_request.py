@@ -69,6 +69,12 @@ class PurchaseRequest(models.Model):
         copy=False,
         tracking=True,
     )
+    date_verified = fields.Date(
+        string="Verified Date",
+    )
+    date_approved = fields.Date(
+        string="Approved Date",
+    )
     substate_sequence = fields.Integer(related="substate_id.sequence")
 
     def action_to_substate(self):
@@ -81,6 +87,7 @@ class PurchaseRequest(models.Model):
             {
                 "substate_id": substate.id,
                 "verified_by": self.env.user.id,
+                "date_verified": fields.Date.today(),
             }
         )
 
@@ -96,5 +103,7 @@ class PurchaseRequest(models.Model):
         )
 
     def button_approved(self):
-        self.write({"approved_by": self.env.user.id})
+        self.write(
+            {"approved_by": self.env.user.id, "date_approved": fields.Date.today()}
+        )
         return super().button_approved()

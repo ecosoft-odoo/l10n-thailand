@@ -104,7 +104,9 @@
             </field>
             <field name="assigned_to" position="after">
                 <field name="verified_by" readonly="1" />
+                <field name="date_verified" readonly="1" />
                 <field name="approved_by" readonly="1" />
+                <field name="date_approved" readonly="1" />
             </field>
             <xpath expr="//form/sheet/notebook" position="inside">
                 <page name="committee" string="Committee">
