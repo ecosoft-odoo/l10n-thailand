@@ -17,6 +17,7 @@
         "data/purchase_guarantee_method_data.xml",
         "data/purchase_guarantee_type_data.xml",
         "security/ir.model.access.csv",
+        "security/purchase_guarantee_security.xml",
         "views/purchase_guarantee_views.xml",
         "views/purchase_guarantee_method_views.xml",
         "views/purchase_guarantee_type_views.xml",
