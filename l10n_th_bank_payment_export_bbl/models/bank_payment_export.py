@@ -256,7 +256,8 @@ class BankPaymentExport(models.Model):
         """This amount field. Actual amount is calculated by dividing this value by 100"""
         return ""
 
-    def _get_text_header_bbl(self, company_code):
+    def _get_text_header_bbl_vals(self, company_code):
+        """Prepare for hook with extended modules"""
         self.ensure_one()
         customer_batch_ref = (
             self.bbl_bank_type == "smart"
@@ -266,21 +267,137 @@ class BankPaymentExport(models.Model):
         now_tz = fields.Datetime.context_timestamp(
             self.env["res.users"], datetime.now()
         )
+        vals = {
+            "company_code_2": company_code,
+            "company_tax_3": self.env.company.vat or "**Company Tax is not config**",
+            "bbl_company_bank_account_4": self.bbl_company_bank_account.acc_number,
+            "customer_batch_ref_5": customer_batch_ref
+            or "**Customer Batch Reference is not config**",
+            "batch_broadcast_message_6": self._hook_batch_broadcast_message(),  # optional
+            "file_date_7": now_tz.strftime("%d%m%Y"),
+            "file_timestamp_8": now_tz.strftime("%H%M%S"),
+        }
+        return vals
+
+    def _get_text_header_bbl(self, company_code):
+        self.ensure_one()
+        vals = self._get_text_header_bbl_vals(company_code)
         text = (
             "001~{company_code_2}~{company_tax_3}~{bbl_company_bank_account_4}~"
             "{customer_batch_ref_5}~{batch_broadcast_message_6}~{file_date_7}~"
-            "{file_timestamp_8}\n".format(
-                company_code_2=company_code,
-                company_tax_3=self.env.company.vat or "**Company Tax is not config**",
-                bbl_company_bank_account_4=self.bbl_company_bank_account.acc_number,
-                customer_batch_ref_5=customer_batch_ref
-                or "**Customer Batch Reference is not config**",
-                batch_broadcast_message_6=self._hook_batch_broadcast_message(),  # optional
-                file_date_7=now_tz.strftime("%d%m%Y"),
-                file_timestamp_8=now_tz.strftime("%H%M%S"),
-            )
+            "{file_timestamp_8}\n".format_map(vals)
         )
         return text
+
+    def _get_text_body_detail_bbl_vals(
+        self,
+        idx,
+        pe_line,
+        company_code,
+        payment,
+        payment_net_amount_bank,
+        bbl_ewht,
+        wht,
+    ):
+        """Prepare for hook with extended modules"""
+        # Receiver
+        (
+            receiver_name,
+            receiver_bank_code,
+            receiver_branch_code,
+            receiver_acc_number,
+        ) = pe_line._get_receiver_information()
+        total_inv_amount = sum(payment.reconciled_bill_ids.mapped("amount_untaxed"))
+        total_wht = wht and sum(wht.wht_line.mapped("amount"))
+        vals = {
+            "company_code_2": company_code,
+            "sequence_3": idx,
+            "bbl_product_code_4": self.bbl_product_code,
+            "receiver_acc_number_5": receiver_acc_number,
+            "value_date_6": pe_line.payment_date.strftime("%d%m%Y"),
+            "value_time_7": self._hook_value_time_7(),  # optional
+            "currency_8": pe_line.currency_id.name,
+            "internal_ref_9": payment.name,
+            "pre_advice_date_10": self._hook_pre_advice_date_10(),  # optional
+            # NOTE: 11 - 18 For Chq Pmt only, this module not support.
+            "bbl_credit_advice_19": self.bbl_credit_advice and "Y" or "N",
+            # NOTE: 20 - 21 For Chq Pmt only, this module not support.
+            "wht_form_type_22": bbl_ewht
+            and self._hook_wht_22_25(pe_line, wht, 22)
+            or "",
+            "wht_serial_no_23": bbl_ewht
+            and self._hook_wht_22_25(pe_line, wht, 23)
+            or "",
+            # NOTE: 24 is Book No., Not support
+            "wht_running_no_25": bbl_ewht
+            and self._hook_wht_22_25(pe_line, wht, 25)
+            or "",
+            "bathnet_type_code_26": self._hook_bathnet_type_code_26(),  # TODO: eWHT?
+            "bbl_bot_type_27": self.bbl_bot_type,
+            # NOTE: 28 - 29 : Required, If there is withholding tax and config eWHT
+            "wht_no_28": bbl_ewht and wht and len(wht.wht_line) or "",
+            "wht_amount_29": bbl_ewht
+            and wht
+            and pe_line._get_amount_no_decimal(total_wht)
+            or "",
+            # NOTE: 30 - 32 : Required, If there is not withholding tax and config eWHT
+            "invoice_no_30": bbl_ewht
+            and not wht
+            and len(payment.reconciled_bill_ids)
+            or "",
+            "total_invoice_amount_31": bbl_ewht
+            and not wht
+            and pe_line._get_amount_no_decimal(total_inv_amount)
+            or "",
+            "total_discount_amount_32": bbl_ewht
+            and not wht
+            and self._hook_total_discount_amount_32()
+            or "",
+            "bbl_payee_charge_33": self.bbl_payee_charge,
+            "payment_net_amount_34": payment_net_amount_bank,
+            "wht_pay_type_35": bbl_ewht and self._hook_wht_pay_type_35() or "",
+            "wht_remark_36": bbl_ewht and self._hook_wht_remark_36() or "",
+            "wht_deduct_date_37": bbl_ewht
+            and wht
+            and wht.date.strftime("%d%m%Y")
+            or "",
+            "receiver_bank_code_38": receiver_bank_code,
+            "receiver_branch_code_39": receiver_branch_code,
+            "wht_signatory_40": bbl_ewht and self._hook_wht_signatory_40() or "",
+            "service_code_41": self._hook_service_code_41(),  # optional
+            "beneficiary_code_42": self._hook_beneficiary_code_42(),  # optional
+            # NOTE: 43 For Chq Pmt only, this module not support.
+            "payee_name_44": receiver_name,
+            "payee_address1_45": self._hook_payee_address(
+                receiver_name, 45
+            ),  # optional
+            "payee_address2_46": self._hook_payee_address(
+                receiver_name, 46
+            ),  # optional
+            "payee_address3_47": self._hook_payee_address(
+                receiver_name, 47
+            ),  # optional
+            "payee_address4_48": self._hook_payee_address(
+                receiver_name, 48
+            ),  # optional
+            "dispatch_address1_49": self._hook_dispatch_address(
+                receiver_name, 49
+            ),  # optional
+            "dispatch_address2_50": self._hook_dispatch_address(
+                receiver_name, 50
+            ),  # optional
+            "dispatch_address3_51": self._hook_dispatch_address(
+                receiver_name, 51
+            ),  # optional
+            "dispatch_address4_52": self._hook_dispatch_address(
+                receiver_name, 52
+            ),  # optional
+            "payee_tax_53": bbl_ewht and payment.partner_id.vat or "",
+            "payee_fax_54": self._hook_payee_fax_54(),  # optional
+            "payee_mobile_55": self._hook_payee_mobile_55(),  # optional
+            "payee_email_56": bbl_ewht and payment.partner_id.email or "",
+        }
+        return vals
 
     def _get_text_body_detail_bbl(
         self,
@@ -292,15 +409,9 @@ class BankPaymentExport(models.Model):
         bbl_ewht,
         wht,
     ):
-        # Receiver
-        (
-            receiver_name,
-            receiver_bank_code,
-            receiver_branch_code,
-            receiver_acc_number,
-        ) = pe_line._get_receiver_information()
-        total_inv_amount = sum(payment.reconciled_bill_ids.mapped("amount_untaxed"))
-        total_wht = wht and sum(wht.wht_line.mapped("amount"))
+        vals = self._get_text_body_detail_bbl_vals(
+            idx, pe_line, company_code, payment, payment_net_amount_bank, bbl_ewht, wht
+        )
         text = (
             "003~{company_code_2}~{sequence_3}~{bbl_product_code_4}~"
             "{receiver_acc_number_5}~{value_date_6}~{value_time_7}~{currency_8}~"
@@ -315,145 +426,84 @@ class BankPaymentExport(models.Model):
             "{payee_address2_46}~{payee_address3_47}~{payee_address4_48}~"
             "{dispatch_address1_49}~{dispatch_address2_50}~{dispatch_address3_51}~"
             "{dispatch_address4_52}~{payee_tax_53}~{payee_fax_54}~{payee_mobile_55}~"
-            "{payee_email_56}\n".format(
-                company_code_2=company_code,
-                sequence_3=idx,
-                bbl_product_code_4=self.bbl_product_code,
-                receiver_acc_number_5=receiver_acc_number,
-                value_date_6=pe_line.payment_date.strftime("%d%m%Y"),
-                value_time_7=self._hook_value_time_7(),  # optional
-                currency_8=pe_line.currency_id.name,
-                internal_ref_9=payment.name,
-                pre_advice_date_10=self._hook_pre_advice_date_10(),  # optional
-                # NOTE: 11 - 18 For Chq Pmt only, this module not support.
-                bbl_credit_advice_19=self.bbl_credit_advice and "Y" or "N",
-                # NOTE: 20 - 21 For Chq Pmt only, this module not support.
-                wht_form_type_22=bbl_ewht
-                and self._hook_wht_22_25(pe_line, wht, 22)
-                or "",
-                wht_serial_no_23=bbl_ewht
-                and self._hook_wht_22_25(pe_line, wht, 23)
-                or "",
-                # NOTE: 24 is Book No., Not support
-                wht_running_no_25=bbl_ewht
-                and self._hook_wht_22_25(pe_line, wht, 25)
-                or "",
-                bathnet_type_code_26=self._hook_bathnet_type_code_26(),  # TODO: eWHT?
-                bbl_bot_type_27=self.bbl_bot_type,
-                # NOTE: 28 - 29 : Required, If there is withholding tax and config eWHT
-                wht_no_28=bbl_ewht and wht and len(wht.wht_line) or "",
-                wht_amount_29=bbl_ewht
-                and wht
-                and pe_line._get_amount_no_decimal(total_wht)
-                or "",
-                # NOTE: 30 - 32 : Required, If there is not withholding tax and config eWHT
-                invoice_no_30=bbl_ewht
-                and not wht
-                and len(payment.reconciled_bill_ids)
-                or "",
-                total_invoice_amount_31=bbl_ewht
-                and not wht
-                and pe_line._get_amount_no_decimal(total_inv_amount)
-                or "",
-                total_discount_amount_32=bbl_ewht
-                and not wht
-                and self._hook_total_discount_amount_32()
-                or "",
-                bbl_payee_charge_33=self.bbl_payee_charge,
-                payment_net_amount_34=payment_net_amount_bank,
-                wht_pay_type_35=bbl_ewht and self._hook_wht_pay_type_35() or "",
-                wht_remark_36=bbl_ewht and self._hook_wht_remark_36() or "",
-                wht_deduct_date_37=bbl_ewht
-                and wht
-                and wht.date.strftime("%d%m%Y")
-                or "",
-                receiver_bank_code_38=receiver_bank_code,
-                receiver_branch_code_39=receiver_branch_code,
-                wht_signatory_40=bbl_ewht and self._hook_wht_signatory_40() or "",
-                service_code_41=self._hook_service_code_41(),  # optional
-                beneficiary_code_42=self._hook_beneficiary_code_42(),  # optional
-                # NOTE: 43 For Chq Pmt only, this module not support.
-                payee_name_44=receiver_name,
-                payee_address1_45=self._hook_payee_address(
-                    receiver_name, 45
-                ),  # optional
-                payee_address2_46=self._hook_payee_address(
-                    receiver_name, 46
-                ),  # optional
-                payee_address3_47=self._hook_payee_address(
-                    receiver_name, 47
-                ),  # optional
-                payee_address4_48=self._hook_payee_address(
-                    receiver_name, 48
-                ),  # optional
-                dispatch_address1_49=self._hook_dispatch_address(
-                    receiver_name, 49
-                ),  # optional
-                dispatch_address2_50=self._hook_dispatch_address(
-                    receiver_name, 50
-                ),  # optional
-                dispatch_address3_51=self._hook_dispatch_address(
-                    receiver_name, 51
-                ),  # optional
-                dispatch_address4_52=self._hook_dispatch_address(
-                    receiver_name, 52
-                ),  # optional
-                payee_tax_53=bbl_ewht and payment.partner_id.vat or "",
-                payee_fax_54=self._hook_payee_fax_54(),  # optional
-                payee_mobile_55=self._hook_payee_mobile_55(),  # optional
-                payee_email_56=bbl_ewht and payment.partner_id.email or "",
-            )
+            "{payee_email_56}\n".format_map(vals)
         )
         return text
+
+    def _get_text_body_wht_bbl_vals(self, idx, pe_line, payment, wht_line):
+        """Prepare for hook with extended modules"""
+        vals = {
+            "internal_ref_2": payment.name,
+            "credit_sequence_3": idx,  # optional
+            "wht_amount_4": pe_line._get_amount_no_decimal(wht_line.amount),
+            "ewht_income_type_5": self._hook_ewht_income_type_5(),
+            "wht_rate_6": str(
+                pe_line._get_amount_no_decimal(wht_line.wht_percent)
+            ).zfill(4),
+            "income_type_amount_7": pe_line._get_amount_no_decimal(wht_line.base),
+        }
+        return vals
 
     def _get_text_body_wht_bbl(self, idx, pe_line, payment, wht_line):
+        vals = self._get_text_body_wht_bbl_vals(idx, pe_line, payment, wht_line)
         text = (
             "005~{internal_ref_2}~{credit_sequence_3}~{wht_amount_4}~"
-            "{ewht_income_type_5}~{wht_rate_6}~{income_type_amount_7}\n".format(
-                internal_ref_2=payment.name,
-                credit_sequence_3=idx,  # optional
-                wht_amount_4=pe_line._get_amount_no_decimal(wht_line.amount),
-                ewht_income_type_5=self._hook_ewht_income_type_5(),
-                wht_rate_6=str(
-                    pe_line._get_amount_no_decimal(wht_line.wht_percent)
-                ).zfill(4),
-                income_type_amount_7=pe_line._get_amount_no_decimal(wht_line.base),
+            "{ewht_income_type_5}~{wht_rate_6}~{income_type_amount_7}\n".format_map(
+                vals
             )
         )
         return text
+
+    def _get_text_body_invoice_ewht_bbl_vals(self, pe_line, payment, wht_line):
+        """Prepare for hook with extended modules"""
+        vals = {
+            "name_ref_2": self._hook_name_ref_2(),
+            "inv_amount_3": pe_line._get_amount_no_decimal(wht_line.base),
+            "inv_description_4": self._hook_inv_description_4(),  # optional
+            "vat_amount_5": self._hook_vat_amount_5(),  # optional
+            "internal_ref_6": payment.name,
+            "ewht_income_type_7": "TODO",  # TODO: do somethings
+        }
+        return vals
 
     def _get_text_body_invoice_ewht_bbl(self, pe_line, payment, wht_line):
+        vals = self._get_text_body_invoice_ewht_bbl_vals(pe_line, payment, wht_line)
         text = (
             "009~{name_ref_2}~{inv_amount_3}~{inv_description_4}~"
-            "{vat_amount_5}~{internal_ref_6}~{ewht_income_type_7}\n".format(
-                name_ref_2=self._hook_name_ref_2(),
-                inv_amount_3=pe_line._get_amount_no_decimal(wht_line.base),
-                inv_description_4=self._hook_inv_description_4(),  # optional
-                vat_amount_5=self._hook_vat_amount_5(),  # optional
-                internal_ref_6=payment.name,
-                ewht_income_type_7="TODO",  # TODO: do somethings
-            )
+            "{vat_amount_5}~{internal_ref_6}~{ewht_income_type_7}\n".format_map(vals)
         )
         return text
+
+    def _get_text_body_invoice_bbl_vals(self, pe_line, payment, inv):
+        """Prepare for hook with extended modules"""
+        vals = {
+            "name_ref_2": self._hook_name_ref_2(),  # TODO: name duplicate ewht?
+            "inv_amount_3": pe_line._get_amount_no_decimal(inv.amount_untaxed),
+            "inv_description_4": self._hook_inv_description_4(),  # TODO: desc duplicate ewht?
+            "vat_amount_5": pe_line._get_amount_no_decimal(inv.amount_tax),
+            "internal_ref_6": payment.name,
+        }
+        return vals
 
     def _get_text_body_invoice_bbl(self, pe_line, payment, inv):
+        vals = self._get_text_body_invoice_bbl_vals(pe_line, payment, inv)
         text = (
             "006~{name_ref_2}~{inv_amount_3}~{inv_description_4}~"
-            "{vat_amount_5}~{internal_ref_6}\n".format(
-                name_ref_2=self._hook_name_ref_2(),  # TODO: name duplicate ewht?
-                inv_amount_3=pe_line._get_amount_no_decimal(inv.amount_untaxed),
-                inv_description_4=self._hook_inv_description_4(),  # TODO: desc duplicate ewht?
-                vat_amount_5=pe_line._get_amount_no_decimal(inv.amount_tax),
-                internal_ref_6=payment.name,
-            )
+            "{vat_amount_5}~{internal_ref_6}\n".format_map(vals)
         )
         return text
 
+    def _get_text_footer_bbl_vals(self, total_amount, payment_lines):
+        """Prepare for hook with extended modules"""
+        vals = {
+            "len_payment": len(payment_lines.ids),
+            "total_amount": total_amount,
+        }
+        return vals
+
     def _get_text_footer_bbl(self, total_amount, payment_lines):
-        text = "100~{len_payment}~{total_amount}".format(
-            len_payment=len(payment_lines.ids),
-            total_amount=total_amount,
-        )
+        vals = self._get_text_footer_bbl_vals(total_amount, payment_lines)
+        text = "100~{len_payment}~{total_amount}".format_map(vals)
         return text
 
     def _format_bbl_text(self):

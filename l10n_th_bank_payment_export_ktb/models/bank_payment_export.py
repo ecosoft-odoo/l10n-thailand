@@ -130,28 +130,35 @@ class BankPaymentExport(models.Model):
             if export.bank == "KRTHTHBK":
                 export.ktb_is_editable = True
 
-    def _get_text_header_ktb(self, payment_lines):
+    def _get_text_header_ktb_vals(self, payment_lines):
+        """Prepare for hook with extended modules"""
         ktb_company_id = (
             self.config_ktb_company_id.value or "**Company ID on KTB is not config**"
         )
         total_batch = len(payment_lines.ids)
         total_amount = sum(payment_lines.mapped("payment_amount"))
         total_batch_amount = payment_lines._get_amount_no_decimal(total_amount)
+        vals = {
+            "idx": "1".zfill(6),  # 1 Batch = 1 File, How we can add more than 1 batch?
+            "total_batch_transaction": str(total_batch).zfill(7),
+            "total_batch_amount": str(total_batch_amount).zfill(19),
+            "effective_date": self.effective_date.strftime("%d%m%Y"),
+            "receiver_no": "0".zfill(8),
+            "ktb_company_id": ktb_company_id.ljust(16),
+            "space": "".ljust(427),  # user id and filter (20 + 407 char)
+        }
+        return vals
+
+    def _get_text_header_ktb(self, payment_lines):
+        vals = self._get_text_header_ktb_vals(payment_lines)
         text = (
             "101{idx}006{total_batch_transaction}{total_batch_amount}"
-            "{effective_date}C{receiver_no}{ktb_company_id}{space}\r\n".format(
-                idx="1".zfill(6),  # 1 Batch = 1 File, How we can add more than 1 batch?
-                total_batch_transaction=str(total_batch).zfill(7),
-                total_batch_amount=str(total_batch_amount).zfill(19),
-                effective_date=self.effective_date.strftime("%d%m%Y"),
-                receiver_no="0".zfill(8),
-                ktb_company_id=ktb_company_id.ljust(16),
-                space="".ljust(427),  # user id and filter (20 + 407 char)
-            )
+            "{effective_date}C{receiver_no}{ktb_company_id}{space}\r\n".format_map(vals)
         )
         return text
 
-    def _get_text_body_ktb(self, idx, pe_line, payment_net_amount_bank):
+    def _get_text_body_ktb_vals(self, idx, pe_line, payment_net_amount_bank):
+        """Prepare for hook with extended modules"""
         # Sender
         sender_name = self.config_ktb_sender_name.value or self.env.company.display_name
         (
@@ -171,43 +178,48 @@ class BankPaymentExport(models.Model):
             and self.ktb_service_type_standard
             or self.ktb_service_type_direct
         )
+        vals = {
+            "idx": "1".zfill(6),  # 1 Batch = 1 File, How we can add more than 1 batch?
+            "receiver_bank_code": receiver_bank_code[:3].zfill(3),  # 10-12
+            "receiver_branch_code": receiver_branch_code[:4].zfill(4),  # 13-16
+            "receiver_acc_number": receiver_acc_number,  # 17-27
+            "sender_bank_code": sender_bank_code[:3].zfill(3),  # 28-30
+            "sender_branch_code": sender_branch_code[:4].zfill(4),  # 31-34
+            "sender_acc_number": sender_acc_number[:11].zfill(11),  # 35-45
+            "effective_date": self.effective_date.strftime("%d%m%Y"),  # 46-53
+            "ktb_service_type": ktb_service_type,  # 54-55
+            "payment_net_amount_bank": payment_net_amount_bank  # 58-74
+            and str(payment_net_amount_bank)[:17].zfill(17)
+            or "0".zfill(17),
+            "receiver_info": "".ljust(8),  # 75-82
+            "receiver_id": "0".zfill(10),  # 83-92
+            "receiver_name": receiver_name  # 93-192
+            and receiver_name[:100].ljust(100)
+            or "".ljust(100),
+            "sender_name": sender_name[:100].ljust(100),  # 193-292
+            "space": "".ljust(
+                100
+            ),  # other info1, 2, dda ref1, 2 and reverse (40+18+18+20+4) # 293-392
+            "ref_running_number": str(idx + 1).zfill(6),  # 393-398
+            # TODO: ref from odoo
+            "email": pe_line.payment_partner_id.email  # 401-440
+            and pe_line.payment_partner_id.email[:40].ljust(40)
+            or "".ljust(40),
+            "sms": pe_line.payment_partner_id.phone  # 441-460
+            and pe_line.payment_partner_id.phone[:20].ljust(20)
+            or "".ljust(20),
+            "filter": "".ljust(34),
+        }
+        return vals
+
+    def _get_text_body_ktb(self, idx, pe_line, payment_net_amount_bank):
+        vals = self._get_text_body_ktb_vals(idx, pe_line, payment_net_amount_bank)
         text = (
             "102{idx}{receiver_bank_code}{receiver_branch_code}{receiver_acc_number}"
             "{sender_bank_code}{sender_branch_code}{sender_acc_number}"
             "{effective_date}{ktb_service_type}00{payment_net_amount_bank}"
             "{receiver_info}{receiver_id}{receiver_name}{sender_name}{space}"
-            "{ref_running_number}09{email}{sms}0000{filter}\r\n".format(
-                idx="1".zfill(6),  # 1 Batch = 1 File, How we can add more than 1 batch?
-                receiver_bank_code=receiver_bank_code[:3].zfill(3),  # 10-12
-                receiver_branch_code=receiver_branch_code[:4].zfill(4),  # 13-16
-                receiver_acc_number=receiver_acc_number,  # 17-27
-                sender_bank_code=sender_bank_code[:3].zfill(3),  # 28-30
-                sender_branch_code=sender_branch_code[:4].zfill(4),  # 31-34
-                sender_acc_number=sender_acc_number[:11].zfill(11),  # 35-45
-                effective_date=self.effective_date.strftime("%d%m%Y"),  # 46-53
-                ktb_service_type=ktb_service_type,  # 54-55
-                payment_net_amount_bank=payment_net_amount_bank  # 58-74
-                and str(payment_net_amount_bank)[:17].zfill(17)
-                or "0".zfill(17),
-                receiver_info="".ljust(8),  # 75-82
-                receiver_id="0".zfill(10),  # 83-92
-                receiver_name=receiver_name  # 93-192
-                and receiver_name[:100].ljust(100)
-                or "".ljust(100),
-                sender_name=sender_name[:100].ljust(100),  # 193-292
-                space="".ljust(
-                    100
-                ),  # other info1, 2, dda ref1, 2 and reverse (40+18+18+20+4) # 293-392
-                ref_running_number=str(idx + 1).zfill(6),  # 393-398
-                # TODO: ref from odoo
-                email=pe_line.payment_partner_id.email  # 401-440
-                and pe_line.payment_partner_id.email[:40].ljust(40)
-                or "".ljust(40),
-                sms=pe_line.payment_partner_id.phone  # 441-460
-                and pe_line.payment_partner_id.phone[:20].ljust(20)
-                or "".ljust(20),
-                filter="".ljust(34),
-            )
+            "{ref_running_number}09{email}{sms}0000{filter}\r\n".format_map(vals)
         )
         return text
 
