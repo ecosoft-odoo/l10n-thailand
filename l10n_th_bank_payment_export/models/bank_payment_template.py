@@ -37,4 +37,5 @@ class BankPaymentConfig(models.Model):
         domain=[("model", "=", "bank.payment.export")],
         ondelete="cascade",
     )
+    field_type = fields.Selection(related="field_id.ttype")
     value = fields.Char(required=True)
