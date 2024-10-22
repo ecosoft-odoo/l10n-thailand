@@ -55,6 +55,8 @@ class BankExportFormatLine(models.Model):
     match_group = fields.Char()
     end_line = fields.Boolean()
     need_loop = fields.Boolean()
+    sub_loop = fields.Boolean()
+    sub_value_loop = fields.Text()
     value_type = fields.Selection(
         selection=[
             ("fixed", "Fixed"),

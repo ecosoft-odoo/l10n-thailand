@@ -55,6 +55,7 @@
                                     />
                                     <field name="sequence" widget="handle" />
                                     <field name="name" style="white-space: normal;" />
+                                    <field name="condition_line" />
                                     <field
                                         name="match_group"
                                         string="Group"
@@ -65,8 +66,13 @@
                                         string="Loop"
                                         optional="show"
                                     />
+                                    <field name="sub_loop" optional="show" />
+                                    <field
+                                        name="sub_value_loop"
+                                        optional="show"
+                                        attrs="{'required': [('sub_loop', '=', True)]}"
+                                    />
                                     <field name="end_line" optional="show" />
-                                    <field name="condition_line" />
                                     <field name="lenght" />
                                     <field name="lenght_from" optional="show" />
                                     <field name="lenght_to" optional="show" />
