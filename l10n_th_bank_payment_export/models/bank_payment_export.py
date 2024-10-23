@@ -451,3 +451,21 @@ class BankPaymentExport(models.Model):
             "view_id": view.id,
             "context": ctx,
         }
+
+    # ====================== Function Common Text File ======================
+
+    def _get_receiver_address(self, object_address):
+        receiver_address = " ".join(
+            [
+                object_address.street or "",
+                object_address.street2 or "",
+                object_address.city or "",
+                object_address.zip or "",
+            ]
+        )
+        return receiver_address
+
+    def _get_address(self, object_address, max_length):
+        receiver_address = self._get_receiver_address(object_address)
+        address = receiver_address[:max_length]
+        return address
