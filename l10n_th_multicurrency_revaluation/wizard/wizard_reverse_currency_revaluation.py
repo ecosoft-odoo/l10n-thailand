@@ -29,7 +29,10 @@ class WizardCurrencyRevaluation(models.TransientModel):
     journal_id = fields.Many2one(
         comodel_name="account.journal",
         string="Journal",
-        domain=[("type", "=", "general")],
+        domain=lambda self: [
+            ("company_id", "=", self.env.company.id),
+            ("type", "=", "general"),
+        ],
         help="You can set the default journal in company settings.",
         required=True,
         default=lambda self: self._get_default_journal_id(),
