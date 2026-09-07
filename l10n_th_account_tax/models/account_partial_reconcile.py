@@ -1,11 +1,32 @@
 # Copyright 2019 Ecosoft Co., Ltd (https://ecosoft.co.th/)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
-from odoo import models
+from odoo import api, models
+from odoo.tools.float_utils import float_is_zero
 
 
 class AccountPartialReconcile(models.Model):
     _inherit = "account.partial.reconcile"
+
+    @api.model
+    def _prepare_cash_basis_tax_line_vals(self, tax_line, balance, amount_currency):
+        """Prorate the tax base amount of the cash basis tax line.
+
+        Odoo copies the full tax base of the origin document on the cash basis
+        tax line, while its balance is prorated by the reconciled percentage.
+        As this module reports the tax base from this line (the base lines of
+        the cash basis entry are not used), a partial payment ends up with a
+        base that does not match the cleared tax, i.e. base 700.00 with tax
+        22.90 for a 7% tax. Prorate the base with the ratio of the tax.
+        """
+        vals = super()._prepare_cash_basis_tax_line_vals(
+            tax_line, balance, amount_currency
+        )
+        currency = tax_line.company_currency_id
+        if not float_is_zero(tax_line.balance, precision_rounding=currency.rounding):
+            ratio = balance / tax_line.balance
+            vals["tax_base_amount"] = currency.round(tax_line.tax_base_amount * ratio)
+        return vals
 
     def _get_move_type_cash_basis(self):
         return ["in_invoice", "entry"]

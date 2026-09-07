@@ -180,10 +180,7 @@ class AccountPaymentRegister(models.TransientModel):
         }
 
     def action_create_payments(self):
-        # For case calculate tax invoice partial payment
-        if self.payment_difference_handling == "open":
-            self = self.with_context(partial_payment=True)
-        elif self.payment_difference_handling == "reconcile":
+        if self.payment_difference_handling == "reconcile":
             self = self.with_context(skip_account_move_synchronization=True)
         # Add context reverse_tax_invoice for case
         # register payment reversal document with undue vat

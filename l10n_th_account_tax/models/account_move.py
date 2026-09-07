@@ -3,7 +3,7 @@
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools.float_utils import float_compare, float_round
+from odoo.tools.float_utils import float_round
 from odoo.tools.misc import format_date
 
 
@@ -115,26 +115,14 @@ class AccountMoveLine(models.Model):
     #                 raise UserError(_("Invalid Tax Amount"))
 
     def _get_tax_base_amount(self, sign, vals_list):
+        """Base amount of the tax invoice.
+
+        On a partial payment, the tax base of the cash basis tax line is
+        already prorated with the same ratio as the cleared tax amount, see
+        account.partial.reconcile._prepare_cash_basis_tax_line_vals()
+        """
         self.ensure_one()
-        base = abs(self.tax_base_amount)
-        tax = abs(self.balance)
-        prec = self.company_id.currency_id.decimal_places
-        full_tax = abs(float_round(self.tax_line_id.amount / 100 * base, prec))
-        # partial payment, we need to compute the base amount
-        partial_payment = self.env.context.get("partial_payment", False)
-        if (
-            partial_payment
-            and self.tax_line_id
-            and float_compare(full_tax, tax, prec) != 0
-        ):
-            payment_id = self.env.context.get("payment_id")
-            if payment_id:
-                payment = self.env["account.payment"].browse(payment_id)
-                amount_base = payment.amount - tax
-            else:
-                amount_base = (tax * 100) / self.tax_line_id.amount
-            base = abs(float_round(amount_base, prec))
-        return sign * base
+        return sign * abs(self.tax_base_amount)
 
     @api.model_create_multi
     def create(self, vals_list):

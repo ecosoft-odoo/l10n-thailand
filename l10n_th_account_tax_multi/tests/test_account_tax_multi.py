@@ -69,6 +69,52 @@ class TestAccountTaxMulti(TransactionCase):
             [("type", "=", "sale"), ("company_id", "=", cls.env.user.company_id.id)],
             limit=1,
         )
+        # Undue VAT, to test the tax base amount on partial payment
+        cls.journal_undue = cls.account_journal.create(
+            {"name": "Undue Journal", "type": "general", "code": "UNDUE"}
+        )
+        cls.env.user.company_id.write(
+            {
+                "tax_exigibility": True,
+                "tax_cash_basis_journal_id": cls.journal_undue.id,
+            }
+        )
+        cls.undue_input_vat_acct = cls.account_account.create(
+            {
+                "name": "DV7",
+                "code": "DV7",
+                "user_type_id": cls.current_asset.id,
+            }
+        )
+        cls.input_vat_acct = cls.account_account.create(
+            {
+                "name": "V7",
+                "code": "V7",
+                "user_type_id": cls.current_asset.id,
+            }
+        )
+        cls.undue_input_vat = cls.env["account.tax"].create(
+            {
+                "name": "DV7",
+                "type_tax_use": "purchase",
+                "amount_type": "percent",
+                "amount": 7.0,
+                "tax_exigibility": "on_payment",
+                "cash_basis_transition_account_id": cls.undue_input_vat_acct.id,
+                "invoice_repartition_line_ids": [
+                    (0, 0, {"factor_percent": 100.0, "repartition_type": "base"}),
+                    (
+                        0,
+                        0,
+                        {
+                            "factor_percent": 100.0,
+                            "repartition_type": "tax",
+                            "account_id": cls.input_vat_acct.id,
+                        },
+                    ),
+                ],
+            }
+        )
 
     def _create_invoice(
         self,
@@ -79,6 +125,7 @@ class TestAccountTaxMulti(TransactionCase):
         price_unit,
         product_id=False,
         multi=False,
+        tax_ids=False,
     ):
         invoice_dict = {
             "name": "Test Supplier Invoice WHT",
@@ -96,6 +143,7 @@ class TestAccountTaxMulti(TransactionCase):
                         "account_id": line_account_id,
                         "name": "Advice1",
                         "price_unit": price_unit or 0.0,
+                        "tax_ids": [(6, 0, tax_ids or [])],
                     },
                 )
             ],
@@ -111,6 +159,7 @@ class TestAccountTaxMulti(TransactionCase):
                         "account_id": line_account_id,
                         "name": "Advice2",
                         "price_unit": price_unit or 0.0,
+                        "tax_ids": [(6, 0, tax_ids or [])],
                     },
                 )
             )
@@ -310,5 +359,57 @@ class TestAccountTaxMulti(TransactionCase):
         register_payment.action_create_payments()
         self.assertEqual(invoice.payment_state, "paid")
         self.assertTrue(payment.line_ids.mapped("full_reconcile_id"))
+
+    def test_05_undue_vat_tax_base_on_partial_payment(self):
+        """Undue VAT, multi deduct and keep open 1 deduction.
+
+        The tax base of the tax invoice must be prorated with the same ratio
+        as the cleared tax, not the full base amount of the bill.
+        """
+        price_unit = 100.0
+        invoice = self._create_invoice(
+            self.partner_1.id,
+            self.expenses_journal.id,
+            "in_invoice",
+            self.expense_account.id,
+            price_unit,
+            multi=True,
+            tax_ids=self.undue_input_vat.ids,
+        )
+        invoice.invoice_line_ids[0].wht_tax_id = self.wht_3
+        invoice.invoice_line_ids[1].wht_tax_id = self.wht_5
+        invoice.action_post()
+        base_amount = sum(invoice.invoice_line_ids.mapped("price_subtotal"))
+        self.assertEqual(base_amount, 200.0)
+        ctx = {
+            "active_ids": [invoice.id],
+            "active_id": invoice.id,
+            "active_model": "account.move",
+        }
+        f = Form(self.payment_register.with_context(**ctx), view=self.view_id)
+        register_payment = f.save()
+        self.assertEqual(
+            register_payment.payment_difference_handling,
+            "reconcile_multi_deduct",
+        )
+        # Keep 3% open, so the bill is not fully paid
+        deduct_3 = register_payment.deduction_ids.filtered(
+            lambda l: l.wht_tax_id == self.wht_3
+        )
+        with Form(deduct_3) as deduct:
+            deduct.open = True
+        payment_id = register_payment._create_payments()
+        payment = self.payment_model.browse(payment_id.id)
+        self.assertEqual(invoice.payment_state, "partial")
+        tax_invoices = payment.tax_invoice_ids
+        self.assertTrue(tax_invoices)
+        tax_base = sum(tax_invoices.mapped("tax_base_amount"))
+        tax_amount = sum(tax_invoices.mapped("balance"))
+        # Partially cleared, base can't be the full base amount of the bill
+        self.assertLess(tax_base, base_amount)
+        # Base and tax are consistent with the tax rate
+        self.assertAlmostEqual(
+            tax_amount, tax_base * self.undue_input_vat.amount / 100, places=2
+        )
 
     # TODO: test for PIT cases

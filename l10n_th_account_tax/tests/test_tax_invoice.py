@@ -377,8 +377,9 @@ class TestTaxInvoice(TransactionCase):
         self.assertEqual(payment.reconciled_bill_ids.payment_state, "partial")
         self.assertEqual(payment.reconciled_bill_ids.amount_residual, 77)
 
-        tax_calculated = 1.96  # payment - (payment * 100)/107
-        tax_base_cal = payment.amount - tax_calculated  # calculat base tax
+        # Tax and base are prorated with the same ratio, the paid percentage
+        tax_calculated = 1.96  # 7.00 * 30 / 107
+        tax_base_cal = 28.04  # 100.00 * 30 / 107
         self.assertEqual(payment.tax_invoice_ids.balance, tax_calculated)
         self.assertEqual(payment.tax_invoice_ids.tax_base_amount, tax_base_cal)
         # Not allow delete tax invoice if it has 1 line.
