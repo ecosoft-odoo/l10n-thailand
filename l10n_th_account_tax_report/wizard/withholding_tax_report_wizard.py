@@ -1,7 +1,8 @@
 # Copyright 2019 Ecosoft Co., Ltd (https://ecosoft.co.th/)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 INCOME_TAX_FORM = {
     "pnd1": "P01",
@@ -27,6 +28,31 @@ class WithHoldingTaxReportWizard(models.TransientModel):
         ],
         required=True,
     )
+    can_export_txt = fields.Boolean(compute="_compute_can_export_txt")
+
+    @api.depends("income_tax_form")
+    def _compute_can_export_txt(self):
+        for wizard in self:
+            field = wizard._get_textfile_format_field()
+            wizard.can_export_txt = field in self.env["res.company"]._fields
+
+    def _get_textfile_format_field(self):
+        """Field of the company with the text file format of the form"""
+        return f"wht_text_file_{self.income_tax_form}_format"
+
+    def _get_textfile_format(self):
+        self.ensure_one()
+        form = dict(self._fields["income_tax_form"].selection)[self.income_tax_form]
+        if not self.can_export_txt:
+            raise UserError(
+                self.env._("Text file export is not available for %s.", form)
+            )
+        textfile_format = self.company_id[self._get_textfile_format_field()]
+        if not textfile_format:
+            raise UserError(
+                self.env._("Set the text file format of %s in the settings.", form)
+            )
+        return textfile_format
 
     def _get_report_base_filename(self):
         self.ensure_one()
@@ -48,9 +74,8 @@ class WithHoldingTaxReportWizard(models.TransientModel):
         }
 
     def button_export_txt(self):
-        self.ensure_one()
-        report_type = "qweb-text"
-        return self._export(report_type)
+        self._get_textfile_format()
+        return self._export("qweb-text")
 
     def _get_report_name(self, report_type):
         self.ensure_one()

@@ -51,6 +51,7 @@
 .data_table .act_as_cell {
     border: 1px solid lightGrey;
     text-align: center;
+    padding: 2px 4px;
 }
 .data_table .act_as_cell,
 .list_table .act_as_cell,
@@ -151,7 +152,7 @@
     .num_page_from {
         position: fixed;
         margin-left: 1053px;
-        top: 150px;
+        top: 147px;
         box-sizing: content-box;
         text-align: center;
         width: 45px;
@@ -160,7 +161,7 @@
     .num_page_to {
         position: fixed;
         margin-left: 1157px;
-        top: 150px;
+        top: 147px;
         box-sizing: content-box;
         text-align: center;
         width: 45px;
@@ -186,28 +187,30 @@
         margin-left: 3px;
     }
     .wht_line_firstname {
-        margin-top: 7px;
+        white-space: nowrap;
+        margin-top: 5px;
         margin-left: 25px;
         box-sizing: content-box;
         width: 240px;
-        height: 21px;
+        height: 23px;
     }
     .wht_line_lastname {
-        margin-top: 7px;
+        white-space: nowrap;
+        margin-top: 5px;
         margin-left: 47px;
         box-sizing: content-box;
         width: 251px;
-        height: 21px;
+        height: 23px;
     }
     .wht_line_date {
-        margin-top: 33px;
+        margin-top: 32px;
         box-sizing: content-box;
         text-align: center;
         width: 162px;
         height: 21px;
     }
     .wht_line_base {
-        margin-top: 33px;
+        margin-top: 32px;
         margin-left: 5px;
         box-sizing: content-box;
         text-align: right;
@@ -215,7 +218,7 @@
         height: 21px;
     }
     .wht_line_amount {
-        margin-top: 33px;
+        margin-top: 32px;
         margin-left: 15px;
         box-sizing: content-box;
         text-align: right;
@@ -223,7 +226,7 @@
         height: 21px;
     }
     .wht_line_tax_payer {
-        margin-top: 33px;
+        margin-top: 32px;
         margin-left: 25px;
         box-sizing: content-box;
         text-align: center;
@@ -233,7 +236,7 @@
     .total_base {
         position: fixed;
         margin-left: 885px;
-        top: 678px;
+        top: 676px;
         box-sizing: content-box;
         text-align: right;
         width: 150px;
@@ -242,7 +245,7 @@
     .total_amount {
         position: fixed;
         margin-left: 1050px;
-        top: 678px;
+        top: 676px;
         box-sizing: content-box;
         text-align: right;
         width: 137px;
@@ -251,7 +254,7 @@
     .sum_total_base {
         position: fixed;
         margin-left: 885px;
-        top: 710px;
+        top: 707px;
         box-sizing: content-box;
         text-align: right;
         width: 150px;
@@ -260,7 +263,7 @@
     .sum_total_amount {
         position: fixed;
         margin-left: 1050px;
-        top: 710px;
+        top: 707px;
         box-sizing: content-box;
         text-align: right;
         width: 137px;
@@ -296,7 +299,7 @@
     .num_page_from {
         position: fixed;
         margin-left: 1053px;
-        top: 161px;
+        top: 158px;
         box-sizing: content-box;
         text-align: center;
         width: 42px;
@@ -305,7 +308,7 @@
     .num_page_to {
         position: fixed;
         margin-left: 1146px;
-        top: 161px;
+        top: 158px;
         box-sizing: content-box;
         text-align: center;
         width: 48px;
@@ -333,44 +336,47 @@
         height: 24px;
     }
     .wht_line_firstname {
-        margin-top: 4px;
+        white-space: nowrap;
+        margin-top: 0px;
         margin-left: 18px;
         box-sizing: content-box;
         width: 188px;
         height: 23px;
     }
     .wht_line_lastname {
-        margin-top: 4px;
+        white-space: nowrap;
+        margin-top: 0px;
         margin-left: 39px;
         box-sizing: content-box;
         width: 200px;
         height: 23px;
     }
     .wht_line_address {
-        margin-top: 6px;
+        white-space: nowrap;
+        margin-top: 2px;
         margin-left: 30px;
         box-sizing: content-box;
         width: 420px;
         height: 23px;
     }
     .wht_line_base {
-        margin-top: 34px;
+        margin-top: 25px;
         margin-left: 34px;
         box-sizing: content-box;
         text-align: right;
         width: 145px;
-        height: 23px;
+        height: 33px;
     }
     .wht_line_amount {
-        margin-top: 34px;
+        margin-top: 25px;
         margin-left: 15px;
         box-sizing: content-box;
         text-align: right;
         width: 137px;
-        height: 23px;
+        height: 33px;
     }
     .wht_line_tax_payer {
-        margin-top: 30px;
+        margin-top: 21px;
         box-sizing: content-box;
         text-align: center;
         width: 33px;
@@ -484,21 +490,23 @@
         height: 25px;
     }
     .wht_line_firstname {
-        margin-top: 7px;
+        white-space: nowrap;
+        margin-top: 4px;
         margin-left: 25px;
         box-sizing: content-box;
         width: 160px;
-        height: 25px;
+        height: 28px;
     }
     .wht_line_lastname {
-        margin-top: 7px;
+        white-space: nowrap;
+        margin-top: 4px;
         margin-left: 35px;
         box-sizing: content-box;
         width: 150px;
-        height: 25px;
+        height: 28px;
     }
     .wht_line_date {
-        margin-top: 33px;
+        margin-top: 31px;
         margin-left: 60px;
         box-sizing: content-box;
         text-align: center;
@@ -506,21 +514,21 @@
         height: 21px;
     }
     .wht_line_percent {
-        margin-top: 33px;
+        margin-top: 31px;
         margin-left: 32px;
         box-sizing: content-box;
         width: 45px;
         height: 25px;
     }
     .wht_line_base {
-        margin-top: 33px;
+        margin-top: 31px;
         box-sizing: content-box;
         text-align: right;
         width: 136px;
         height: 25px;
     }
     .wht_line_amount {
-        margin-top: 33px;
+        margin-top: 31px;
         margin-left: 12px;
         box-sizing: content-box;
         text-align: right;
@@ -528,7 +536,7 @@
         height: 25px;
     }
     .wht_line_tax_payer {
-        margin-top: 33px;
+        margin-top: 31px;
         margin-left: 55px;
         box-sizing: content-box;
         text-align: center;
@@ -644,25 +652,28 @@
         height: 24px;
     }
     .wht_line_firstname {
-        margin-top: 4px;
+        white-space: nowrap;
+        margin-top: 2px;
         margin-left: 30px;
         box-sizing: content-box;
         width: 270px;
         height: 24px;
     }
     .wht_line_lastname {
-        margin-top: 4px;
+        white-space: nowrap;
+        margin-top: 2px;
         margin-left: 30px;
         box-sizing: content-box;
         width: 200px;
         height: 24px;
     }
     .wht_line_address {
-        margin-top: 4px;
+        white-space: nowrap;
+        margin-top: 2px;
         margin-left: 35px;
         box-sizing: content-box;
-        width: 900px;
-        height: 24px;
+        width: 488px;
+        height: 27px;
     }
     .wht_line_date {
         margin-top: 6px;
@@ -679,14 +690,14 @@
         height: 24px;
     }
     .wht_line_percent {
-        margin-top: 10px;
+        margin-top: 6px;
         box-sizing: content-box;
         text-align: right;
         width: 33px;
         height: 24px;
     }
     .wht_line_base {
-        margin-top: 10px;
+        margin-top: 6px;
         margin-left: 2px;
         box-sizing: content-box;
         text-align: right;
@@ -694,7 +705,7 @@
         height: 24px;
     }
     .wht_line_amount {
-        margin-top: 10px;
+        margin-top: 6px;
         margin-left: 2px;
         box-sizing: content-box;
         text-align: right;
@@ -702,7 +713,7 @@
         height: 24px;
     }
     .wht_line_tax_payer {
-        margin-top: 10px;
+        margin-top: 6px;
         margin-left: 5px;
         box-sizing: content-box;
         text-align: center;
@@ -712,7 +723,7 @@
     .total_base {
         position: fixed;
         margin-left: 925px;
-        top: 681px;
+        top: 679px;
         box-sizing: content-box;
         text-align: right;
         width: 139px;
@@ -721,7 +732,7 @@
     .total_amount {
         position: fixed;
         margin-left: 1067px;
-        top: 681px;
+        top: 679px;
         box-sizing: content-box;
         text-align: right;
         width: 146px;
@@ -730,7 +741,7 @@
     .sum_total_base {
         position: fixed;
         margin-left: 925px;
-        top: 710px;
+        top: 708px;
         box-sizing: content-box;
         text-align: right;
         width: 139px;
@@ -739,7 +750,7 @@
     .sum_total_amount {
         position: fixed;
         margin-left: 1067px;
-        top: 710px;
+        top: 708px;
         box-sizing: content-box;
         text-align: right;
         width: 146px;
@@ -814,26 +825,31 @@
         margin-top: 2px;
     }
     .wht_line_name {
+        white-space: nowrap;
+        margin-top: -5px;
         margin-left: 20px;
         box-sizing: content-box;
-        width: 410px;
+        width: 402px;
         height: 17px;
     }
     .wht_line_address {
-        margin-top: 2px;
+        margin-bottom: 4px;
+        line-height: 16px;
+        margin-top: 5px;
         margin-left: 26px;
         box-sizing: content-box;
-        width: 400px;
-        height: 38px;
+        width: 397px;
+        height: 36px;
     }
     .wht_line_date {
-        margin-top: 24px;
+        margin-top: 19px;
         box-sizing: content-box;
         text-align: center;
         width: 90px;
         height: 24px;
     }
     .wht_line_desc {
+        line-height: 16px;
         margin-top: 24px;
         margin-left: 8px;
         box-sizing: content-box;
@@ -841,7 +857,7 @@
         height: 24px;
     }
     .wht_line_percent {
-        margin-top: 25px;
+        margin-top: 19px;
         margin-left: 3px;
         box-sizing: content-box;
         text-align: right;
@@ -849,7 +865,7 @@
         height: 24px;
     }
     .wht_line_base {
-        margin-top: 25px;
+        margin-top: 19px;
         margin-left: 3px;
         box-sizing: content-box;
         text-align: right;
@@ -857,7 +873,7 @@
         height: 24px;
     }
     .wht_line_amount {
-        margin-top: 25px;
+        margin-top: 19px;
         margin-left: 3px;
         box-sizing: content-box;
         text-align: right;
@@ -865,7 +881,7 @@
         height: 24px;
     }
     .wht_line_tax_payer {
-        margin-top: 24px;
+        margin-top: 18px;
         margin-left: 5px;
         box-sizing: content-box;
         text-align: center;
@@ -875,7 +891,7 @@
     .total_base {
         position: fixed;
         margin-left: 921px;
-        top: 657px;
+        top: 655px;
         box-sizing: content-box;
         text-align: right;
         width: 141px;
@@ -884,7 +900,7 @@
     .total_amount {
         position: fixed;
         margin-left: 1066px;
-        top: 657px;
+        top: 655px;
         box-sizing: content-box;
         text-align: right;
         width: 145px;
@@ -893,7 +909,7 @@
     .sum_total_base {
         position: fixed;
         margin-left: 921px;
-        top: 690px;
+        top: 685px;
         box-sizing: content-box;
         text-align: right;
         width: 141px;
@@ -902,7 +918,7 @@
     .sum_total_amount {
         position: fixed;
         margin-left: 1066px;
-        top: 690px;
+        top: 685px;
         box-sizing: content-box;
         text-align: right;
         width: 145px;

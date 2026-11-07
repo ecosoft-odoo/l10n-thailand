@@ -42,6 +42,7 @@
                         name="button_export_txt"
                         string="Export TXT"
                         type="object"
+                        invisible="not can_export_txt"
                     />
                     <button string="Cancel" class="oe_link" special="cancel" />
                 </footer>

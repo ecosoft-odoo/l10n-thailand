@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from odoo import models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare, float_round
 
 
 class WithholdingTaxReportText(models.AbstractModel):
@@ -23,6 +24,24 @@ class WithholdingTaxReportText(models.AbstractModel):
             return 2
         return 3  # Paid One Time
 
+    def _format_wht_textfile_amount(self, amount):
+        """Amount of the RD text file: 2 decimals rounded half up, no thousands
+        separator (the RD format forbids commas), e.g. 1750.00"""
+        return f"{float_round(amount or 0.0, precision_digits=2):.2f}"
+
+    def _format_wht_textfile_rate(self, rate):
+        """Rate of the RD text file: 2 decimals, e.g. 3.00 or 2.75"""
+        rounded = float_round(rate, precision_digits=2)
+        if float_compare(rate, rounded, precision_digits=4):
+            raise UserError(
+                self.env._(
+                    "The withholding tax rate %s has more than 2 decimals, the"
+                    " RD text file allows 2 decimals.",
+                    self._format_wht_rate(rate),
+                )
+            )
+        return self._format_wht_rate(rate, digits=2, trim=False, symbol=False)
+
     def _prepare_display_wht_textfile(self, record, prefix=""):
         args = defaultdict(str)
         for field in record:
@@ -34,11 +53,11 @@ class WithholdingTaxReportText(models.AbstractModel):
                     format_date="{day:02d}{month}{year}",
                 )
             elif field in ["base", "amount"]:
-                args[key] = f"{record[field]:,.2f}"
+                args[key] = self._format_wht_textfile_amount(record[field])
             elif field == "cert_tax_payer":
                 args[key] = self._convert_wht_tax_payer(record[field])
             elif field == "wht_percent":
-                args[key] = int(record[field])
+                args[key] = self._format_wht_textfile_rate(record[field])
             else:
                 args[key] = record[field] or ""
         return args
@@ -107,11 +126,11 @@ class WithholdingTaxReportText(models.AbstractModel):
                         format_date="{day:02d}{month}{year}",
                     )
                 elif field in ["base", "amount"]:
-                    args[field] = f"{line[field]:,.2f}"
+                    args[field] = self._format_wht_textfile_amount(line[field])
                 elif field == "cert_tax_payer":
                     args[field] = self._convert_wht_tax_payer(line[field])
                 elif field == "wht_percent":
-                    args[field] = int(line[field])
+                    args[field] = self._format_wht_textfile_rate(line[field])
                 else:
                     args[field] = line[field] or ""
 
@@ -165,19 +184,7 @@ class WithholdingTaxReportText(models.AbstractModel):
 
     def _get_report_values(self, docids, data):
         report_values = super()._get_report_values(docids, data)
-        data = report_values["docs"]._prepare_report_wht()
-
-        company = self.env["res.company"].browse(data["company_id"])
-
-        try:
-            wht_textfile_format = company[
-                f"wht_text_file_{report_values['income_tax_form']}_format"
-            ]
-        except Exception as e:
-            raise UserError(
-                self.env._("Not implement %s yet", report_values["income_tax_form"])
-            ) from e
-
+        wht_textfile_format = report_values["docs"]._get_textfile_format()
         text_file_value = self._create_text_wht(report_values, wht_textfile_format)
         report_values["text_file_value"] = text_file_value
         return report_values

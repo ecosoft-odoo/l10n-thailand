@@ -10,6 +10,7 @@
     "category": "Accounting",
     "depends": [
         "date_range",
+        "partner_firstname",
         "report_xlsx_helper",
         "l10n_th_base_utils",
         "l10n_th_account_tax",

@@ -67,7 +67,12 @@
                 <span t-out="line['partner_vat']" />
             </div>
             <div class="act_as_cell left">
-                <span t-out="line['partner_name']" />
+                <span
+                    t-att-res-id="not line['cert_cancel'] and line['partner_id']"
+                    res-model="res.partner"
+                    view-type="form"
+                    t-out="line['partner_name']"
+                />
             </div>
             <div class="act_as_cell left">
                 <span t-out="line['partner_address']" />
@@ -78,9 +83,8 @@
             <div class="act_as_cell left">
                 <span t-out="line['wht_cert_income_desc']" />
             </div>
-            <div class="act_as_cell right">
-                <span t-out="line['wht_percent']" />
-                <span>%</span>
+            <div class="act_as_cell right" style="white-space: nowrap;">
+                <span t-out="format_wht_rate(line['wht_percent'])" />
             </div>
             <div class="act_as_cell amount">
                 <span
@@ -96,7 +100,12 @@
                 <span t-out="line['cert_tax_payer']" />
             </div>
             <div class="act_as_cell left">
-                <span t-out="line['cert_name']" />
+                <span
+                    t-att-res-id="line['cert_id'][0]"
+                    res-model="withholding.tax.cert"
+                    view-type="form"
+                    t-out="line['cert_name']"
+                />
             </div>
         </div>
     </template>

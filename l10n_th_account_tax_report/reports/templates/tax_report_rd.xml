@@ -120,13 +120,7 @@
         <div class="o_report_rd_tax_report">
             <div class="row">
                 <div class="col-12">
-                    <t t-set="n" t-value="0" />
-                    <t t-set="np" t-value="15" />
-                    <t t-foreach="range(ceil(num_results/np))" t-as="i">
-                        <t
-                            t-set="tax_report_data_split"
-                            t-value="tax_report_data[i*np:min((i+1) * np, num_results)]"
-                        />
+                    <t t-foreach="rd_pages" t-as="page">
                         <table>
                             <thead>
                                 <tr>
@@ -225,9 +219,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <t t-set="total_base_page" t-value="0.00" />
-                                <t t-set="total_tax_page" t-value="0.00" />
-                                <t t-foreach="tax_report_data_split" t-as="line">
+                                <t t-foreach="page['lines']" t-as="line">
                                     <tr>
                                         <td
                                             class="text-center"
@@ -278,18 +270,10 @@
                                         </td>
                                         <td class="text-right">
                                             <t
-                                                t-set="total_base_page"
-                                                t-value="total_base_page + line['tax_base_amount']"
-                                            />
-                                            <t
                                                 t-out="'{0:,.2f}'.format(line['tax_base_amount'])"
                                             />
                                         </td>
                                         <td class="text-right">
-                                            <t
-                                                t-set="total_tax_page"
-                                                t-value="total_tax_page + line['tax_amount']"
-                                            />
                                             <t
                                                 t-out="'{0:,.2f}'.format(line['tax_amount'])"
                                             />
@@ -306,16 +290,16 @@
                                     </th>
                                     <th class="text-right">
                                         <span
-                                            t-out="'{:,.2f}'.format(total_base_page)"
+                                            t-out="'{:,.2f}'.format(page['total_base'])"
                                         />
                                     </th>
                                     <th class="text-right">
                                         <span
-                                            t-out="'{:,.2f}'.format(total_tax_page)"
+                                            t-out="'{:,.2f}'.format(page['total_tax'])"
                                         />
                                     </th>
                                 </tr>
-                                <t t-if="line['row_number'] == num_results">
+                                <t t-if="page_last">
                                     <tr>
                                         <th
                                             colspan="8"

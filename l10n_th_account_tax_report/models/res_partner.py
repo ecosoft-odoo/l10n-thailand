@@ -22,3 +22,11 @@ class ResPartner(models.Model):
         env = self.with_context(lang=get_lang(self.env, "th_TH").code).env
         titles = dict(self._fields["l10n_th_title"]._description_selection(env))
         return titles[self.l10n_th_title]
+
+    def _get_tax_report_names(self):
+        """First name and last name on the Thai tax reports. RD asks the first
+        name only, then the middle name and the surname. A juristic person, or
+        an individual without last name, has its full name as first name."""
+        if self.is_company or not self.firstname:
+            return self.name, ""
+        return self.firstname, self.lastname or ""

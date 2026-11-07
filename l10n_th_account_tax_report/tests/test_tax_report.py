@@ -1,11 +1,14 @@
 # Copyright 2021 Ecosoft Co., Ltd (https://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
+from unittest.mock import patch
+
 from dateutil.rrule import MONTHLY
 from freezegun import freeze_time
 
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
+from odoo.tools import SQL
 
 from odoo.addons.l10n_th_account_tax.tests.common import ThAccountTaxCommon
 
@@ -144,6 +147,14 @@ class TestTaxReport(ThAccountTaxCommon):
         # Get data query tax is 1
         self.assertEqual(len(res_data["tax_report_data"]), 1)
         self.assertEqual(res_data["tax_report_format"], "rd")
+        self.assertEqual(len(res_data["rd_pages"]), 1)
+        # A long name wraps: the pages are split by the height of the rows
+        report_rd = self.env["report.l10n_th_account_tax_report.report_rd_thai_tax"]
+        line = dict(res_data["tax_report_data"][0])
+        self.assertEqual(report_rd._get_rd_line_count(line), 1)
+        line["partner_name"] = "บริษัท ไทยพัฒนาอุตสาหกรรมการเกษตรและอาหารแปรรูป " * 3
+        self.assertGreater(report_rd._get_rd_line_count(line), 1)
+        self.assertGreater(len(report_rd._get_rd_pages([line] * 15)), 1)
         self.assertEqual(
             res_data["company_address"],
             self.company.partner_id._display_address(without_name=True),
@@ -326,3 +337,19 @@ class TestTaxReport(ThAccountTaxCommon):
         lines = report._get_report_values(wizard.ids, {})["tax_report_data"]
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0]["doc_refs"], [(invoice.name, invoice.id)])
+
+    def test_09_query_hooks(self):
+        """Other modules extend the query with SQL parts, e.g. a condition with
+        a parameter"""
+        report = self.env["report.l10n_th_account_tax_report.report_thai_tax"]
+        data = self.tax_purchase_report_wizard._prepare_report_tax()
+        self.assertEqual(len(report._get_tax_data(data)), 1)
+        where = report._query_where_tax(data)
+        with patch.object(
+            type(report),
+            "_query_where_tax",
+            lambda rep, data: SQL(
+                "%s AND t.partner_id != %s", where, self.partner_b.id
+            ),
+        ):
+            self.assertFalse(report._get_tax_data(data))

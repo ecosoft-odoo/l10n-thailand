@@ -175,6 +175,12 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
         self.assertFalse(line["partner_branch"])
         self.assertEqual(res_data["total_base"], 100.0)
         self.assertEqual(res_data["total_wht"], 3.0)
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "l10n_th_account_tax_report.report_withholding_tax",
+            self.wht_report_pnd3_wizard.ids,
+        )[0]
+        self.assertIn(b'res-model="res.partner"', html)
+        self.assertIn(f'res-id="{self.partner_a.id}"'.encode(), html)
         self.assertEqual(report["name"], "Withholding Tax Report")
         self.assertEqual(report["report_type"], "qweb-pdf")
         self.assertEqual(
@@ -208,6 +214,10 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
             self.wht_report_pnd3_wizard.ids,
         )[0]
         self.assertIn(b"Withholding Tax Report", html)
+        self.assertIn(b'res-model="withholding.tax.cert"', html)
+        self.assertIn(f'res-id="{self.cert_pnd3.id}"'.encode(), html)
+        # No partner link on a cancelled certificate
+        self.assertNotRegex(html, rb'res-model="res.partner"[^>]*res-id=')
 
     def test_03_wht_button_export_pdf_rd(self):
         # Check change config standard to rd
@@ -220,6 +230,29 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
 
         # Get data query tax is 1
         self.assertEqual(len(res_data["wht_report_data"]), 1)
+        self.assertEqual(len(res_data["rd_pages"]), 1)
+        page = res_data["rd_pages"][0]
+        line = res_data["wht_report_data"][0]
+        self.assertEqual(page["lines"], [line])
+        self.assertEqual(page["total_base"], line["base"])
+        self.assertEqual(page["total_wht"], line["amount"])
+        # Long texts are written smaller to fit their box of the form
+        self.assertFalse(line["rd_styles"])
+        self.partner_a.street = "999/123 หมู่ที่ 5 อาคารสาทรซิตี้ทาวเวอร์ ชั้น 25 " * 2
+        res_data = self.env[
+            "report.l10n_th_account_tax_report.report_rd_withholding_tax"
+        ]._get_report_values(self.wht_report_pnd3_wizard.ids, report["data"])
+        self.assertIn(
+            "font-size",
+            res_data["rd_pages"][0]["lines"][0]["rd_styles"]["partner_address"],
+        )
+        # Too long at the minimum size: shortened
+        self.partner_a.street *= 5
+        res_data = self.env[
+            "report.l10n_th_account_tax_report.report_rd_withholding_tax"
+        ]._get_report_values(self.wht_report_pnd3_wizard.ids, report["data"])
+        address = res_data["rd_pages"][0]["lines"][0]["partner_address"]
+        self.assertTrue(address.endswith("…"))
         self.assertFalse(res_data["wht_groupby_partner"])
         self.assertEqual(res_data["wht_report_format"], "rd")
         self.assertEqual(report["name"], "Withholding Tax Report (RD)")
@@ -228,6 +261,12 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
             report["report_name"],
             f"l10n_th_account_tax_report.report_rd_withholding_tax/{self.wht_report_pnd3_wizard.id}",
         )
+        # Print from the HTML view (standard report) gives the RD form too
+        content, _ = self.env["ir.actions.report"]._render_qweb_pdf(
+            "l10n_th_account_tax_report.report_withholding_tax",
+            self.wht_report_pnd3_wizard.ids,
+        )
+        self.assertIn(b"o_report_rd_withholding_tax_report_pnd3", content)
 
         # Allow group by partner by filter PND1A or send context need_group_by_partner=1
         res_data = (
@@ -237,6 +276,7 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
         )
         self.assertEqual(len(res_data["wht_groupby_partner"]), 1)
         # Render the RD forms
+        self.partner_a.vat = False
         for wizard in (
             self.wht_report_pnd1_wizard,
             self.wht_report_pnd3_wizard,
@@ -246,6 +286,8 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
                 "l10n_th_account_tax_report.report_rd_withholding_tax", wizard.ids
             )[0]
             self.assertTrue(html)
+            self.assertIn(b'res-model="withholding.tax.cert"', html)
+            self.assertIn(b'res-model="res.partner"', html)
 
     def test_04_wht_button_export_xlsx(self):
         report = self.wht_report_pnd3_wizard.button_export_xlsx()
@@ -287,6 +329,8 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
         self.assertEqual(tax_payer, "1")
         # Date in B.E. (ddmmyyyy)
         self.assertIn("|15012569|", res_data["text_file_value"])
+        # Rate with 2 decimals, as the RD text file format
+        self.assertIn("|3.00|", res_data["text_file_value"])
 
     def test_06_wht_button_export_text_file_pnd53(self):
         report = self.wht_report_pnd53_wizard.button_export_txt()
@@ -389,11 +433,59 @@ class TestWithholdingTaxReport(ThAccountTaxCommon):
         self.assertEqual(income_code, "401N")
         self.assertEqual(tax_payer, "3")
 
-    def test_09_wht_button_export_text_file_no_implement(self):
-        """Test export text file no implement"""
-        report = self.wht_report_pnd2_wizard.button_export_txt()
+    def test_09_wht_button_export_text_file_not_available(self):
+        """The text file needs a format of the form, set in the settings"""
+        self.assertTrue(self.wht_report_pnd3_wizard.can_export_txt)
+        self.assertFalse(self.wht_report_pnd2_wizard.can_export_txt)
+        with self.assertRaisesRegex(UserError, "not available for PND2"):
+            self.wht_report_pnd2_wizard.button_export_txt()
+        self.env.company.wht_text_file_pnd3_format = False
+        with self.assertRaisesRegex(UserError, "Set the text file format of PND3"):
+            self.wht_report_pnd3_wizard.button_export_txt()
 
-        with self.assertRaisesRegex(UserError, "Not implement"):
-            self.env[
-                "report.l10n_th_account_tax_report.report_withholding_tax_text"
-            ]._get_report_values(self.wht_report_pnd2_wizard.ids, report["data"])
+    def test_10_wht_rate_format(self):
+        """Rates show their decimals only: 3%, 1.5%; the RD text file has 2"""
+        report = self.env["report.l10n_th_account_tax_report.report_withholding_tax"]
+        for rate, text in ((3.0, "3%"), (1.5, "1.5%"), (2.75, "2.75%"), (0.0, "0%")):
+            self.assertEqual(report._format_wht_rate(rate), text)
+        report_text = self.env[
+            "report.l10n_th_account_tax_report.report_withholding_tax_text"
+        ]
+        self.assertEqual(report_text._format_wht_textfile_rate(3.0), "3.00")
+        self.assertEqual(report_text._format_wht_textfile_rate(2.75), "2.75")
+        # No thousands separator, the RD format forbids commas
+        self.assertEqual(report_text._format_wht_textfile_amount(1750.0), "1750.00")
+        self.assertEqual(report_text._format_wht_textfile_amount(False), "0.00")
+        with self.assertRaises(UserError):
+            report_text._format_wht_textfile_rate(1.125)
+        html = self.env["ir.actions.report"]._render_qweb_html(
+            "l10n_th_account_tax_report.report_withholding_tax",
+            self.wht_report_pnd3_wizard.ids,
+        )[0]
+        self.assertIn(b"<span>3%</span>", html)
+
+    def test_11_wht_partner_names(self):
+        """RD asks the first name only, then the middle name and the surname"""
+        self.partner_a.write({"firstname": "สมชาย", "lastname": "ณ อยุธยา"})
+        report = self.wht_report_pnd3_wizard.button_export_txt()
+        res_data = self.env[
+            "report.l10n_th_account_tax_report.report_withholding_tax_text"
+        ]._get_report_values(self.wht_report_pnd3_wizard.ids, report["data"])
+        self.assertIn("|สมชาย|ณ อยุธยา|", res_data["text_file_value"])
+        res_data = self.env[
+            "report.l10n_th_account_tax_report.report_rd_withholding_tax"
+        ]._get_report_values(self.wht_report_pnd3_wizard.ids, report["data"])
+        line = res_data["rd_pages"][0]["lines"][0]
+        self.assertEqual(line["partner_firstname"], "สมชาย")
+        self.assertEqual(line["partner_lastname"], "ณ อยุธยา")
+        # A juristic person keeps its full name
+        self.partner_b.name = "บริษัท ทดสอบ จำกัด"
+        self.assertEqual(
+            self.partner_b._get_tax_report_names(), ("บริษัท ทดสอบ จำกัด", "")
+        )
+        # An individual without last name, or without first name as created
+        # with its name only, has its full name as first name
+        partner = self.env["res.partner"].create({"name": "Somchai"})
+        self.assertEqual(partner._get_tax_report_names(), ("Somchai", ""))
+        partner.write({"firstname": False, "lastname": "สมหญิง ใจดี"})
+        self.assertEqual(partner._get_tax_report_names(), ("สมหญิง ใจดี", ""))

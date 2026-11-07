@@ -4,6 +4,7 @@
 from collections import defaultdict
 
 from odoo import models
+from odoo.tools import float_round
 
 
 class WithholdingTaxReport(models.AbstractModel):
@@ -56,32 +57,34 @@ class WithholdingTaxReport(models.AbstractModel):
     def _add_data_line(self, wht_report_data):
         wht_cert_model = self.env["withholding.tax.cert"]
         partner_bank_model = self.env["res.partner.bank"]
+        # Read the certificates of all the lines at once, also their partners
+        cert_ids = tuple({line["cert_id"][0] for line in wht_report_data})
+        bank_ids = tuple(
+            {
+                line["wht_cert_bank_account"][0]
+                for line in wht_report_data
+                if line["wht_cert_bank_account"]
+            }
+        )
         total_base = 0.0
         total_wht = 0.0
         for i, line in enumerate(wht_report_data):
-            cert = wht_cert_model.browse(line["cert_id"][0])
+            cert = wht_cert_model.browse(line["cert_id"][0]).with_prefetch(cert_ids)
             cert_cancel = cert.state == "cancel"
             selection = dict(cert._fields["tax_payer"].selection)
 
             # Partner
             partner = cert.partner_id
             partner_address = partner._display_address(without_name=True)
-            firstname = partner.name
-            # TODO(l10n_th_partner): `lastname` came from partner_firstname
-            # (dependency of l10n_th_partner), not available anymore.
-            # lastname = partner.lastname or ""
-            # if lastname:
-            #     firstname = firstname[: -(len(lastname))]
-            lastname = ""
-            if partner.is_company:
-                firstname = partner.name
-                lastname = ""
+            firstname, lastname = partner._get_tax_report_names()
 
             # Partner Bank Account
             if line["wht_cert_income_type"] == "4A" and line["wht_cert_bank_account"]:
-                partner_bank_account = partner_bank_model.browse(
-                    line["wht_cert_bank_account"][0]
-                ).sanitized_account_number
+                partner_bank_account = (
+                    partner_bank_model.browse(line["wht_cert_bank_account"][0])
+                    .with_prefetch(bank_ids)
+                    .sanitized_account_number
+                )
             else:
                 partner_bank_account = False
 
@@ -135,6 +138,14 @@ class WithholdingTaxReport(models.AbstractModel):
             total_base += line["base"]
             total_wht += line["amount"]
         return total_base, total_wht, wht_report_data
+
+    def _format_wht_rate(self, rate, digits=4, trim=True, symbol=True):
+        """Withholding tax rate as text: 3% and 1.5% with `trim` (only the
+        decimals of the rate), else 3.00 with `digits` decimals"""
+        text = f"{float_round(rate or 0.0, precision_digits=digits):.{digits}f}"
+        if trim:
+            text = text.rstrip("0").rstrip(".")
+        return f"{text}%" if symbol else text
 
     def _get_wht_group_partner(self, wht_report_data):
         grouped = defaultdict(list)
@@ -205,4 +216,5 @@ class WithholdingTaxReport(models.AbstractModel):
             "total_wht": total_wht,
             "wht_report_data": wht_report_data,
             "wht_groupby_partner": wht_groupby_partner,
+            "format_wht_rate": self._format_wht_rate,
         }
